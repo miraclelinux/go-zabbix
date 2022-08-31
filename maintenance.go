@@ -29,7 +29,7 @@ type Maintenance struct {
 	MaintenanceID string
 	Name          string
 	ActiveSince   time.Time
-	activeTill    time.Time
+	ActiveTill    time.Time
 	Description   string
 	// Service period in hours
 	ServicePeriod       int
@@ -64,7 +64,7 @@ type MaintenanceGetParams struct {
 }
 
 type MaintenanceCreateParams struct {
-	jMaintenance
+	JMaintenance
 
 	Groupids []string `json:"groupids,omitempty"`
 	// Hosts name
@@ -74,10 +74,14 @@ type MaintenanceCreateParams struct {
 	Tags        []string      `json:"tags,omitempty"`
 }
 
+type MaintenanceCreateResponse struct {
+	IDs []string `json:"maintenanceids"`
+}
+
 // GetMaintenance queries the Zabbix API for Maintenance matching the given search
 // parameters.
 func (s *Session) GetMaintenance(params *MaintenanceGetParams) ([]Maintenance, error) {
-	jmaintenance := make([]jMaintenance, 0)
+	jmaintenance := make([]JMaintenance, 0)
 	err := s.Get("maintenance.get", params, &jmaintenance)
 	if err != nil {
 		return nil, err
@@ -100,17 +104,13 @@ func (s *Session) GetMaintenance(params *MaintenanceGetParams) ([]Maintenance, e
 	return out, nil
 }
 
-func (s *Session) CreateMaintenance(params *MaintenanceCreateParams) (err error) {
+func (s *Session) CreateMaintenance(params *MaintenanceCreateParams) (response MaintenanceCreateResponse, err error) {
 	if err = params.FillHostIDs(s); err != nil {
-		return err
+		return
 	}
 
-	response := make(map[string]interface{})
-	if err = s.Get("maintenance.create", params, &response); err != nil {
-		return err
-	}
-
-	return nil
+	err = s.Get("maintenance.create", params, &response)
+	return
 }
 
 func (m *Maintenance) Delete(session *Session) error {
