@@ -178,3 +178,13 @@ func (c *Session) Get(method string, params interface{}, v interface{}) error {
 
 	return nil
 }
+
+// Close calls "user.logout" API to close the session.
+func (c *Session) Close() error {
+	_, err := c.Do(NewRequest("user.logout", nil))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
