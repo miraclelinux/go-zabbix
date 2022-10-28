@@ -7,10 +7,19 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 // ErrNotFound describes an empty result set for an API call.
 var ErrNotFound = errors.New("No results were found matching the given search parameters")
+
+// LoginParam is used for user.login API.
+// Use Username in over Zabbix 5.4, otherwise use User for username.
+type LoginParam struct {
+	User     string `json:"user,omitempty"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+}
 
 // A Session is an authenticated Zabbix JSON-RPC API client. It must be
 // initialized and connected with NewSession.
@@ -45,16 +54,24 @@ func NewSession(url string, username string, password string) (session *Session,
 
 func (c *Session) login(username, password string) error {
 	// get Zabbix API version
-	_, err := c.GetVersion()
+	v, err := c.GetVersion()
 	if err != nil {
 		return fmt.Errorf("Failed to retrieve Zabbix API version: %v", err)
 	}
 
-	// login to API
-	params := map[string]string{
-		"user":     username,
-		"password": password,
+	version, err := strconv.ParseFloat(v[0:3], 64)
+	if err != nil {
+		return fmt.Errorf("Failed to convert Zabbix version string to float: %v", err)
 	}
+
+	// login to API
+	var params LoginParam
+	if version > 5.2 {
+		params.Username = username
+	} else {
+		params.User = username
+	}
+	params.Password = password
 
 	res, err := c.Do(NewRequest("user.login", params))
 	if err != nil {
