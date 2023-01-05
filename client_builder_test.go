@@ -76,6 +76,16 @@ func TestSessionCache(t *testing.T) {
 	}
 }
 
+func TestWithSessionToken(t *testing.T) {
+	session, err := CreateClient(fakeURL).WithSessionToken(fakeToken).Connect()
+	if err != nil {
+		t.Error("failed to create session with SessionToken", err)
+	}
+	if err := compareSessionWithMock(session); err != nil {
+		t.Error(err)
+	}
+}
+
 func compareSessionWithMock(session *Session) error {
 	if session.URL != fakeURL {
 		return fmt.Errorf("Session URL '%s' is not equal to '%s'", session.URL, fakeURL)

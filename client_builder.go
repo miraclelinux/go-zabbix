@@ -1,12 +1,15 @@
 package zabbix
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // ClientBuilder is Zabbix API client builder
 type ClientBuilder struct {
 	cache       SessionAbstractCache
 	hasCache    bool
 	url         string
+	token       string
 	credentials map[string]string
 	client      *http.Client
 }
@@ -23,6 +26,13 @@ func (builder *ClientBuilder) WithCache(cache SessionAbstractCache) *ClientBuild
 func (builder *ClientBuilder) WithCredentials(username string, password string) *ClientBuilder {
 	builder.credentials["username"] = username
 	builder.credentials["password"] = password
+
+	return builder
+}
+
+// WithSessionToken sets auth token for Zabbix API
+func (builder *ClientBuilder) WithSessionToken(token string) *ClientBuilder {
+	builder.token = token
 
 	return builder
 }
@@ -44,20 +54,23 @@ func (builder *ClientBuilder) Connect() (session *Session, err error) {
 			return session, nil
 		}
 	}
-
 	// Otherwise - login to a Zabbix server
+	// When a token exists, inject it into the session.
+	// Otherwise fetch a token from the Zabbix server using credentials.
 	session = &Session{URL: builder.url, client: builder.client}
-	err = session.login(builder.credentials["username"], builder.credentials["password"])
-
+	if builder.token != "" {
+		session.Token = builder.token
+		err = nil
+	} else {
+		err = session.login(builder.credentials["username"], builder.credentials["password"])
+	}
 	if err != nil {
 		return nil, err
 	}
-
 	// Try to cache session if any cache used
 	if builder.hasCache {
 		return session, builder.cache.SaveSession(session)
 	}
-
 	return session, err
 }
 
