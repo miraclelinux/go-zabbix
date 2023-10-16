@@ -1,5 +1,9 @@
 package zabbix
 
+import (
+	"encoding/json"
+)
+
 const (
 	// HostSourceDefault indicates that a Host was created in the normal way.
 	HostSourceDefault = 0
@@ -81,7 +85,7 @@ type Host struct {
 	Description string `json:"description"`
 
 	// Inventory mode
-	InventoryMode int `json:"inventory_mode"`
+	InventoryMode json.Number `json:"inventory_mode"`
 
 	// HostID of the proxy managing this host
 	ProxyHostID string `json:"proxy_hostid"`
