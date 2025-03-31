@@ -119,8 +119,27 @@ func (c *Session) AuthToken() string {
 //
 // Generally Get or a wrapper function will be used instead of Do.
 func (c *Session) Do(req *Request) (resp *Response, err error) {
-	// configure request
-	req.AuthToken = c.Token
+	version := 0.0
+	if req.Method != "apiinfo.version" {
+		// get Zabbix API version
+		v, err := c.GetVersion()
+		if err != nil {
+			return nil, fmt.Errorf("Failed to retrieve Zabbix API version: %v", err)
+		}
+
+		version, err = strconv.ParseFloat(v[0:3], 64)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to convert Zabbix version string to float: %v", err)
+		}
+
+		if version < 6.4 {
+			// configure request
+			req.AuthToken = c.Token
+		} else {
+			// don't send deprecated auth parameter
+			req.AuthToken = ""
+		}
+	}
 
 	// encode request as json
 	b, err := json.Marshal(req)
@@ -137,6 +156,12 @@ func (c *Session) Do(req *Request) (resp *Response, err error) {
 	}
 	r.ContentLength = int64(len(b))
 	r.Header.Add("Content-Type", "application/json-rpc")
+
+	if req.Method != "apiinfo.version" {
+		if version >= 6.4 {
+			r.Header.Add("Authorization", "Bearer " + c.Token)
+		}
+	}
 
 	// send request
 	client := c.client

@@ -90,3 +90,4 @@ Released under the [GNU GPL License](https://github.com/miraclelinux/go-zabbix/b
 - Add `proxy.get`
 - Add `hostinterface.get`
 - Remove cover.run link from README.md
+- Add support for authorization via HTTP header for API versions >= 6.4
